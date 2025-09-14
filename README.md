@@ -1,18 +1,18 @@
-# 🏠 House Price Prediction Engine  
+# House Price Prediction Engine  
 
 
 
 ---
 
-## 🔑 Key Features
+## Key Features
 - ⚙️ **Scalable ML Pipeline**: Data preprocessing, feature engineering, model training (LightGBM/RandomForest).  
-- 🌍 **Geospatial Integration**: Distance features (e.g., proximity to city center).  
-- 📊 **Explainability**: SHAP values to interpret model predictions.  
-- 🖥️ **Interactive Dashboard**: Built with **Streamlit** for real-time property valuation.  
-- 🌐 **REST API**: Flask backend for programmatic access to predictions.  
-- 🐳 **Deployable**: Includes **Dockerfile** for containerized deployment.  
-- ✅ **CI/CD Ready**: GitHub Actions pipeline with automated tests.  
-- 🧪 **Unit Tests**: Ensures system reliability.  
+-  **Geospatial Integration**: Distance features (e.g., proximity to city center).  
+-  **Explainability**: SHAP values to interpret model predictions.  
+-  **Interactive Dashboard**: Built with **Streamlit** for real-time property valuation.  
+-  **REST API**: Flask backend for programmatic access to predictions.  
+-  **Deployable**: Includes **Dockerfile** for containerized deployment.  
+-  **CI/CD Ready**: GitHub Actions pipeline with automated tests.  
+-  **Unit Tests**: Ensures system reliability.  
 
 ---
 
@@ -27,3 +27,4 @@
 ---
 
 ## 📂 Repository Structure
+
