@@ -1,0 +1,21 @@
+area,bedrooms,bathrooms,year_built,lat,lon,description,price
+1000,2,1,2005,12.9716,77.5946,"2BHK near metro station with modern amenities",85000
+1500,3,2,2010,12.9352,77.6245,"Spacious 3BHK near park with garden view",130000
+800,1,1,1995,13.0358,77.5970,"Compact 1BHK affordable housing unit",65000
+2000,4,3,2018,12.9141,77.6100,"Luxury villa with swimming pool and gym",220000
+1200,2,2,2012,12.9710,77.5800,"Renovated flat near IT hub with parking",98000
+1800,3,2,2015,12.9250,77.6200,"Premium apartment with city skyline view",165000
+900,2,1,2008,12.9800,77.5900,"Cozy 2BHK near shopping mall",75000
+2500,4,4,2020,12.9000,77.6000,"Penthouse with terrace and jacuzzi",280000
+1100,2,2,2011,12.9600,77.6100,"Well-maintained flat with balcony",92000
+1600,3,3,2016,12.9200,77.6300,"Modern apartment with smart home features",145000
+700,1,1,1998,13.0400,77.6000,"Budget-friendly studio apartment",55000
+1900,3,2,2017,12.9100,77.6150,"Corner unit with natural lighting",158000
+1300,2,2,2013,12.9500,77.6050,"Furnished apartment near business district",105000
+2100,4,3,2019,12.9050,77.6250,"Duplex with private garden",195000
+950,2,1,2009,12.9750,77.5850,"Renovated flat with wooden flooring",78000
+1700,3,2,2014,12.9300,77.6200,"Apartment with premium finishes",152000
+850,1,1,2003,13.0300,77.5950,"Compact unit with storage space",68000
+2200,4,3,2021,12.8950,77.6050,"New construction with eco-friendly features",210000
+1400,3,2,2012,12.9400,77.6150,"Family-friendly apartment near schools",125000
+1050,2,1,2007,12.9700,77.5950,"Well-located flat with good connectivity",82000

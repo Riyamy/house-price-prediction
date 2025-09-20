@@ -1,0 +1,70 @@
+import joblib
+import numpy as np
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.ensemble import RandomForestRegressor
+import lightgbm as lgb
+
+def train_lgb(X, y):
+    """
+    Train LightGBM with GridSearchCV. If LightGBM or GridSearch fails,
+    fall back to a RandomForestRegressor. Returns (model, best_params, rmse, r2).
+    """
+    # Work on a copy and ensure numeric features only
+    X = X.copy()
+    X = X.select_dtypes(include=[np.number]).fillna(0)
+
+    if X.shape[0] < 2:
+        raise ValueError(f"Not enough samples to train: n_samples={X.shape[0]}")
+
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    try:
+        model = lgb.LGBMRegressor(objective="regression", n_jobs=-1)
+        param_grid = {
+            "num_leaves": [31, 50],
+            "n_estimators": [200, 500],
+            "learning_rate": [0.01, 0.05]
+        }
+
+        gs = GridSearchCV(
+            model,
+            param_grid,
+            cv=3,
+            scoring="neg_root_mean_squared_error",
+            n_jobs=-1,
+            verbose=1,
+            error_score="raise"  # raise exceptions during fit so we catch them
+        )
+        gs.fit(X_train, y_train)
+        best = gs.best_estimator_
+        best_params = gs.best_params_
+
+    except Exception as e:
+        # If LightGBM or GridSearch fails, fallback gracefully to RandomForest
+        print("Warning: LightGBM/GridSearch failed — falling back to RandomForest. Error:", e)
+        best = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
+        best.fit(X_train, y_train)
+        best_params = {"fallback": "RandomForest"}
+
+    # Evaluate
+    preds = best.predict(X_val)
+    mse = mean_squared_error(y_val, preds)
+    rmse = float(np.sqrt(mse))
+    r2 = float(r2_score(y_val, preds))
+
+    return best, best_params, rmse, r2
+
+def predict_from_model(model, input_dict):
+    import pandas as pd
+    X = pd.DataFrame([input_dict])
+    # ensure features pipeline (build_features) has already been applied by caller, but also guard:
+    X = X.select_dtypes(include=[np.number]).fillna(0)
+    pred = model.predict(X)[0]
+    return float(pred)
+
+def save_model(model, path):
+    joblib.dump(model, path)
+
+def load_model(path):
+    return joblib.load(path)
