@@ -72,7 +72,7 @@ house_price_prediction/
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone <https://github.com/Riyamy/house-price-prediction>
 cd house_price_prediction_final
 
 # Install dependencies
@@ -324,7 +324,7 @@ The system expects CSV data with the following columns:
 - **Explainability**: SHAP feature importance
 - **Scalability**: Handles structured, unstructured, and geospatial data
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -336,7 +336,7 @@ The system expects CSV data with the following columns:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - LightGBM for gradient boosting
 - SHAP for model explainability
@@ -347,4 +347,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**Built with ❤️ for accurate and explainable house price predictions**
+
