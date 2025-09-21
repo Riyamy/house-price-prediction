@@ -1,4 +1,5 @@
 import joblib
+import os
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, r2_score
@@ -29,52 +30,84 @@ def train_lgb(X, y):
     print(f"Training on {X_train.shape[0]} samples with {X_train.shape[1]} features")
     print(f"Validation on {X_val.shape[0]} samples")
 
-    try:
-        # LightGBM with comprehensive parameter grid
-        model = lgb.LGBMRegressor(
-            objective="regression", 
-            n_jobs=-1,
-            random_state=42,
-            verbose=-1
-        )
-        
-        # Expanded parameter grid for better optimization
-        param_grid = {
-            "num_leaves": [31, 50, 100],
-            "n_estimators": [200, 500, 1000],
-            "learning_rate": [0.01, 0.05, 0.1],
-            "max_depth": [6, 8, 10],
-            "min_child_samples": [20, 30, 50],
-            "subsample": [0.8, 0.9, 1.0],
-            "colsample_bytree": [0.8, 0.9, 1.0]
-        }
+    fast_train = os.getenv("FAST_TRAIN", "0") == "1"
 
-        print("🔍 Starting GridSearchCV optimization...")
-        gs = GridSearchCV(
-            model,
-            param_grid,
-            cv=3,
-            scoring="neg_root_mean_squared_error",
-            n_jobs=-1,
-            verbose=1,
-            error_score="raise",
-        )
-        gs.fit(X_train, y_train)
-        best = gs.best_estimator_
-        best_params = gs.best_params_
-        print(f"✅ LightGBM GridSearch completed. Best params: {best_params}")
+    if fast_train:
+        # Fast path for CI: small model, no grid search
+        print("⚡ FAST_TRAIN enabled: using small LightGBM model without GridSearch")
+        try:
+            best = lgb.LGBMRegressor(
+                objective="regression",
+                n_estimators=50,
+                learning_rate=0.1,
+                num_leaves=31,
+                max_depth=-1,
+                subsample=1.0,
+                colsample_bytree=1.0,
+                n_jobs=-1,
+                random_state=42,
+                verbose=-1,
+            )
+            best.fit(X_train, y_train)
+            best_params = {"mode": "FAST_TRAIN", "algo": "LightGBM"}
+        except Exception as e:
+            print(f"⚠️ LightGBM fast path failed, falling back to RandomForest. Error: {e}")
+            best = RandomForestRegressor(
+                n_estimators=50,
+                n_jobs=-1,
+                random_state=42,
+                max_depth=8,
+                min_samples_split=4,
+            )
+            best.fit(X_train, y_train)
+            best_params = {"mode": "FAST_TRAIN", "algo": "RandomForest"}
+    else:
+        try:
+            # LightGBM with comprehensive parameter grid
+            model = lgb.LGBMRegressor(
+                objective="regression", 
+                n_jobs=-1,
+                random_state=42,
+                verbose=-1
+            )
+            
+            # Expanded parameter grid for better optimization
+            param_grid = {
+                "num_leaves": [31, 50, 100],
+                "n_estimators": [200, 500, 1000],
+                "learning_rate": [0.01, 0.05, 0.1],
+                "max_depth": [6, 8, 10],
+                "min_child_samples": [20, 30, 50],
+                "subsample": [0.8, 0.9, 1.0],
+                "colsample_bytree": [0.8, 0.9, 1.0]
+            }
 
-    except Exception as e:
-        print(f"⚠️ Warning: LightGBM/GridSearch failed — falling back to RandomForest. Error: {e}")
-        best = RandomForestRegressor(
-            n_estimators=200, 
-            n_jobs=-1, 
-            random_state=42,
-            max_depth=10,
-            min_samples_split=5
-        )
-        best.fit(X_train, y_train)
-        best_params = {"fallback": "RandomForest"}
+            print("🔍 Starting GridSearchCV optimization...")
+            gs = GridSearchCV(
+                model,
+                param_grid,
+                cv=3,
+                scoring="neg_root_mean_squared_error",
+                n_jobs=-1,
+                verbose=1,
+                error_score="raise",
+            )
+            gs.fit(X_train, y_train)
+            best = gs.best_estimator_
+            best_params = gs.best_params_
+            print(f"✅ LightGBM GridSearch completed. Best params: {best_params}")
+            
+        except Exception as e:
+            print(f"⚠️ Warning: LightGBM/GridSearch failed — falling back to RandomForest. Error: {e}")
+            best = RandomForestRegressor(
+                n_estimators=200, 
+                n_jobs=-1, 
+                random_state=42,
+                max_depth=10,
+                min_samples_split=5
+            )
+            best.fit(X_train, y_train)
+            best_params = {"fallback": "RandomForest"}
 
     # Evaluate model
     preds = best.predict(X_val)
@@ -93,29 +126,31 @@ def train_lgb(X, y):
     else:
         print(f"⚠️ Target RMSE not achieved (${rmse:,.2f} > ${target_rmse:,})")
 
-    # Generate SHAP explanations
-    try:
-        print("🔍 Generating SHAP explanations...")
-        explainer = shap.TreeExplainer(best)
-        shap_values = explainer.shap_values(X_val[:100])  # Limit for performance
-        
-        # Calculate feature importance
-        feature_importance = np.abs(shap_values).mean(0)
-        feature_names = X.columns.tolist()
-        
-        # Create importance dataframe
-        importance_df = pd.DataFrame({
-            'feature': feature_names,
-            'importance': feature_importance
-        }).sort_values('importance', ascending=False)
-        
-        print("📈 Top 10 Most Important Features:")
-        for i, (_, row) in enumerate(importance_df.head(10).iterrows()):
-            print(f"   {i+1:2d}. {row['feature']:<25} {row['importance']:.4f}")
+    # Generate SHAP explanations (skip in FAST_TRAIN)
+    importance_df = None
+    if not fast_train:
+        try:
+            print("🔍 Generating SHAP explanations...")
+            explainer = shap.TreeExplainer(best)
+            shap_values = explainer.shap_values(X_val[:100])  # Limit for performance
             
-    except Exception as e:
-        print(f"⚠️ SHAP analysis failed: {e}")
-        importance_df = None
+            # Calculate feature importance
+            feature_importance = np.abs(shap_values).mean(0)
+            feature_names = X.columns.tolist()
+            
+            # Create importance dataframe
+            importance_df = pd.DataFrame({
+                'feature': feature_names,
+                'importance': feature_importance
+            }).sort_values('importance', ascending=False)
+            
+            print("📈 Top 10 Most Important Features:")
+            for i, (_, row) in enumerate(importance_df.head(10).iterrows()):
+                print(f"   {i+1:2d}. {row['feature']:<25} {row['importance']:.4f}")
+                
+        except Exception as e:
+            print(f"⚠️ SHAP analysis failed: {e}")
+            importance_df = None
 
     return best, best_params, rmse, r2, importance_df
 
